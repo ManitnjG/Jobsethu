@@ -90,6 +90,30 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      - name: Capture AI repair diagnostics
+        if: failure()
+        run: |
+          mkdir -p ai-repair
+          gradle --no-daemon --console=plain :app:compileDebugKotlin > ai-repair/compile.log 2>&1 || true
+          tail -n 500 ai-repair/compile.log > ai-repair/AI_REPAIR_CONTEXT.md
+          grep -E -i "(^e:|error:|exception|failed|what went wrong|unresolved reference|cannot find|type mismatch)" ai-repair/compile.log | tail -n 250 > ai-repair/errors.txt || true
+
+      - name: Upload AI repair diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Jobsethu-ai-repair-${{ github.run_number }}
+          path: ai-repair/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Create automated repair issue
+        if: failure() && github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create --repo "${{ github.repository }}" --title "Build repair needed - run ${{ github.run_number }}" --body-file ai-repair/AI_REPAIR_CONTEXT.md || true
+
       - name: Upload build reports on failure
         if: failure()
         uses: actions/upload-artifact@v4
