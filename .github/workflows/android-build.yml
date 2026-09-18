@@ -62,6 +62,9 @@ jobs:
               -dname "CN=Android Debug,O=Android,C=US"
           fi
 
+      - name: Run unit tests
+        run: gradle --no-daemon --stacktrace :app:testDebugUnitTest
+
       - name: Build debug APK
         run: gradle --no-daemon --stacktrace :app:assembleDebug
 
