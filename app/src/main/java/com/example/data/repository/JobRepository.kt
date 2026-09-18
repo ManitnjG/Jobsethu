@@ -19,11 +19,11 @@ class JobRepository(
     val allJobs: Flow<List<Job>> = jobDao.getAllJobs()
     val savedJobs: Flow<List<Job>> = jobDao.getSavedJobs()
 
-    suspend fun refreshJobs(candidateProfile: CandidateProfile? = null) {
+    suspend fun refreshJobs(candidateProfile: CandidateProfile? = null, query: String? = null, location: String? = null) {
         // Production mode: only ingest jobs returned by real permitted APIs.
         // The previous CompanyCareerProvider contains demonstration fixtures and
         // must never be mixed into the live feed.
-        val combined = realJobProvider.fetchJobs()
+        val combined = realJobProvider.fetchJobs(query, location)
 
         // Consolidate duplicates across sources
         val consolidated = DuplicateJobDetector.consolidateDuplicates(combined)
