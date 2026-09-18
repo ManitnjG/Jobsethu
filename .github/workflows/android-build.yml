@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: android-build-${{ github.ref }}
@@ -31,22 +32,15 @@ jobs:
           java-version: "17"
           cache: gradle
 
-      - name: Android SDK environment
-        run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
-          test -d "$ANDROID_HOME" || test -d "$ANDROID_SDK_ROOT"
-
-      - name: Set up Gradle 9.3.1
+      - name: Set up Gradle cache
         uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: "9.3.1"
 
       - name: Prepare environment file
         run: |
           if [ ! -f .env ] && [ -f .env.example ]; then
             cp .env.example .env
           fi
+          chmod +x gradlew
 
       - name: Create Android debug keystore
         run: |
@@ -65,14 +59,10 @@ jobs:
       - name: Run unit tests
         id: unit_tests
         continue-on-error: true
-        run: gradle --no-daemon --stacktrace :app:testDebugUnitTest
-
-      - name: Report unit test status
-        if: steps.unit_tests.outcome == 'failure'
-        run: echo "::warning::Unit tests failed. APK compilation will continue so build errors can be diagnosed independently."
+        run: ./gradlew --no-daemon --stacktrace :app:testDebugUnitTest
 
       - name: Build debug APK
-        run: gradle --no-daemon --stacktrace :app:assembleDebug
+        run: ./gradlew --no-daemon --stacktrace :app:assembleDebug
 
       - name: Verify APK
         run: |
@@ -90,15 +80,15 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Capture AI repair diagnostics
+      - name: Capture repair diagnostics
         if: failure()
         run: |
           mkdir -p ai-repair
-          gradle --no-daemon --console=plain :app:compileDebugKotlin > ai-repair/compile.log 2>&1 || true
-          tail -n 500 ai-repair/compile.log > ai-repair/AI_REPAIR_CONTEXT.md
+          ./gradlew --no-daemon --console=plain :app:compileDebugKotlin > ai-repair/compile.log 2>&1 || true
+          tail -n 500 ai-repair/compile.log > ai-repair/AI_REPAIR_CONTEXT.md || true
           grep -E -i "(^e:|error:|exception|failed|what went wrong|unresolved reference|cannot find|type mismatch)" ai-repair/compile.log | tail -n 250 > ai-repair/errors.txt || true
 
-      - name: Upload AI repair diagnostics
+      - name: Upload repair diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
         with:
@@ -114,20 +104,8 @@ jobs:
         run: |
           gh issue create --repo "${{ github.repository }}" --title "Build repair needed - run ${{ github.run_number }}" --body-file ai-repair/AI_REPAIR_CONTEXT.md || true
 
-      - name: Upload build reports on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Jobsethu-build-reports
-          path: |
-            **/build/reports/**
-            **/build/outputs/logs/**
-          if-no-files-found: ignore
-          retention-days: 7
-
-
       - name: Publish APK to GitHub Release
-        if: github.event_name != 'pull_request'
+        if: success() && github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
