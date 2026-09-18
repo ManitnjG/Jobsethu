@@ -23,8 +23,7 @@ class JobRepository(
         // Production mode: only ingest jobs returned by real permitted APIs.
         // The previous CompanyCareerProvider contains demonstration fixtures and
         // must never be mixed into the live feed.
-        val aggregatorJobs = aggregatorJobProvider.fetchJobs()
-        val combined = aggregatorJobs
+        val combined = realJobProvider.fetchJobs()
 
         // Consolidate duplicates across sources
         val consolidated = DuplicateJobDetector.consolidateDuplicates(combined)
