@@ -86,7 +86,7 @@ class MultiSourceJobProvider(
                 val title = item.optString("title")
                 val description = item.optString("description")
                 if (!queryMatches(title, description, query)) continue
-                val loc = item.optString("location", item.optString("locationRestrictions", "Remote"))
+                val loc = item.optString("location").ifBlank { item.opt("locationRestrictions")?.toString() ?: "Remote" }
                 if (!locationEligible(loc, location)) continue
                 val timestamp = parseTime(item.optString("pubDate", item.optString("createdAt")))
                 val url = item.optString("applicationLink", item.optString("url"))
