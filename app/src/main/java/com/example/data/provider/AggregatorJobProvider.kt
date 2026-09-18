@@ -24,7 +24,7 @@ class AggregatorJobProvider : JobSourceProvider {
 
     override suspend fun fetchJobs(query: String?, location: String?): List<Job> = withContext(Dispatchers.IO) {
         val endpoint = buildString {
-            append("https://remotive.com/api/remote-jobs?limit=100")
+            append("https://remotive.com/api/remote-jobs?limit=200")
             if (!query.isNullOrBlank()) append("&search=").append(URLEncoder.encode(query, "UTF-8"))
         }
         val connection = (URL(endpoint).openConnection() as HttpURLConnection).apply {
@@ -42,6 +42,14 @@ class AggregatorJobProvider : JobSourceProvider {
                 for (i in 0 until jobs.length()) {
                     val item = jobs.optJSONObject(i) ?: continue
                     val requiredLocation = item.optString("candidate_required_location", "Remote")
+                    // Jobsethu is India-first: keep vacancies that explicitly accept
+                    // India or globally/anywhere remote candidates. A caller-provided
+                    // location can narrow this further.
+                    val indiaEligible = requiredLocation.contains("india", true) ||
+                        requiredLocation.contains("worldwide", true) ||
+                        requiredLocation.contains("anywhere", true) ||
+                        requiredLocation.contains("global", true)
+                    if (!indiaEligible) continue
                     if (!location.isNullOrBlank() &&
                         !requiredLocation.contains(location, ignoreCase = true) &&
                         !requiredLocation.contains("worldwide", ignoreCase = true) &&
@@ -63,7 +71,7 @@ class AggregatorJobProvider : JobSourceProvider {
                             company = item.optString("company_name", "Employer"),
                             companyLogoUrl = item.optString("company_logo"),
                             locationCity = requiredLocation,
-                            locationState = "",
+                            locationState = if (requiredLocation.contains("india", true)) "India" else "Remote / India eligible",
                             workType = WorkType.REMOTE,
                             description = plainDescription,
                             skillsRequired = jsonStrings(item.optJSONArray("tags")),
