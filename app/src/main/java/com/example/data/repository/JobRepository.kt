@@ -21,9 +21,11 @@ class JobRepository(
     val savedJobs: Flow<List<Job>> = jobDao.getSavedJobs()
 
     suspend fun refreshJobs(candidateProfile: CandidateProfile? = null) {
-        val directAtsJobs = companyCareerProvider.fetchJobs()
+        // Production mode: only ingest jobs returned by real permitted APIs.
+        // The previous CompanyCareerProvider contains demonstration fixtures and
+        // must never be mixed into the live feed.
         val aggregatorJobs = aggregatorJobProvider.fetchJobs()
-        val combined = directAtsJobs + aggregatorJobs
+        val combined = aggregatorJobs
 
         // Consolidate duplicates across sources
         val consolidated = DuplicateJobDetector.consolidateDuplicates(combined)
@@ -46,7 +48,7 @@ class JobRepository(
             job.copy(
                 isScamWarning = job.isScamWarning || scamResult.isWarning,
                 scamWarningReason = if (job.scamWarningReason.isNotEmpty()) job.scamWarningReason else scamResult.explanation,
-                matchPercentage = matchAnalysis?.overallMatchPercent ?: 82
+                matchPercentage = matchAnalysis?.overallMatchPercent ?: 0
             )
         }
 
