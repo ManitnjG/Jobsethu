@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Stylized Bridge & Career Star / Portal: safe zone within 21..87 (center 54) -->
+    <!-- Bridge Arch -->
+    <path
+        android:pathData="M27,66 C36,54 72,54 81,66 L81,72 C72,60 36,60 27,72 Z"
+        android:fillColor="#00E5FF" />
+    <!-- Bridge Base Roadway -->
+    <path
+        android:pathData="M24,70 L84,70 L84,74 L24,74 Z"
+        android:fillColor="#FFD166" />
+    <!-- Stylized Briefcase / Talent Hub Body -->
+    <path
+        android:pathData="M44,40 L64,40 C66.2,40 68,41.8 68,44 L68,58 C68,60.2 66.2,62 64,62 L44,62 C41.8,62 40,60.2 40,58 L40,44 C40,41.8 41.8,40 44,40 Z"
+        android:fillColor="#FFFFFF" />
+    <!-- Briefcase Handle -->
+    <path
+        android:pathData="M48,40 L48,36 C48,34.5 49.5,33 51,33 L57,33 C58.5,33 60,34.5 60,36 L60,40"
+        android:strokeWidth="2.5"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
+    <!-- AI Sparkle / Star over the briefcase -->
+    <path
+        android:pathData="M54,44 L55.5,49 L60.5,50.5 L55.5,52 L54,57 L52.5,52 L47.5,50.5 L52.5,49 Z"
+        android:fillColor="#FF9F1C" />
+</vector>

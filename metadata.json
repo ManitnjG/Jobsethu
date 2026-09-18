@@ -1,0 +1,6 @@
+{
+  "name": "JobSetu AI",
+  "description": "AI-powered Indian job search and career assistant connecting job seekers to verified private and government opportunities.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
