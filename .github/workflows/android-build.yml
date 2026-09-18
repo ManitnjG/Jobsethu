@@ -32,15 +32,16 @@ jobs:
           java-version: "17"
           cache: gradle
 
-      - name: Set up Gradle cache
+      - name: Set up Gradle 9.3.1
         uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.3.1"
 
       - name: Prepare environment file
         run: |
           if [ ! -f .env ] && [ -f .env.example ]; then
             cp .env.example .env
           fi
-          chmod +x gradlew
 
       - name: Create Android debug keystore
         run: |
@@ -59,10 +60,10 @@ jobs:
       - name: Run unit tests
         id: unit_tests
         continue-on-error: true
-        run: ./gradlew --no-daemon --stacktrace :app:testDebugUnitTest
+        run: gradle --no-daemon --stacktrace :app:testDebugUnitTest
 
       - name: Build debug APK
-        run: ./gradlew --no-daemon --stacktrace :app:assembleDebug
+        run: gradle --no-daemon --stacktrace :app:assembleDebug
 
       - name: Verify APK
         run: |
@@ -84,7 +85,7 @@ jobs:
         if: failure()
         run: |
           mkdir -p ai-repair
-          ./gradlew --no-daemon --console=plain :app:compileDebugKotlin > ai-repair/compile.log 2>&1 || true
+          gradle --no-daemon --console=plain :app:compileDebugKotlin > ai-repair/compile.log 2>&1 || true
           tail -n 500 ai-repair/compile.log > ai-repair/AI_REPAIR_CONTEXT.md || true
           grep -E -i "(^e:|error:|exception|failed|what went wrong|unresolved reference|cannot find|type mismatch)" ai-repair/compile.log | tail -n 250 > ai-repair/errors.txt || true
 
