@@ -69,6 +69,13 @@ class SearchViewModel(
                 aiProvider.searchIntent(query)
             } else null
 
+            // Query live providers for every explicit search instead of only filtering cached jobs.
+            val liveLocation = intent?.detectedCity?.takeIf { it.isNotBlank() }
+                ?: _uiState.value.filters.selectedCity.takeIf { it.isNotBlank() }
+            runCatching {
+                jobRepository.refreshJobs(candidateProfileCache, query.takeIf { it.isNotBlank() }, liveLocation)
+            }
+
             // Update filters based on parsed intent
             val updatedFilters = if (intent != null) {
                 _uiState.value.filters.copy(
