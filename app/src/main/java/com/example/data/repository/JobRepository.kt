@@ -4,7 +4,7 @@ import com.example.data.ai.AIProvider
 import com.example.data.local.JobDao
 import com.example.data.model.CandidateProfile
 import com.example.data.model.Job
-import com.example.data.provider.AggregatorJobProvider
+import com.example.data.provider.MultiSourceJobProvider
 import com.example.data.provider.CompanyCareerProvider
 import com.example.data.provider.DuplicateJobDetector
 import com.example.data.provider.ScamProtectionEngine
@@ -14,7 +14,7 @@ class JobRepository(
     private val jobDao: JobDao,
     private val aiProvider: AIProvider,
     private val companyCareerProvider: CompanyCareerProvider = CompanyCareerProvider(),
-    private val aggregatorJobProvider: AggregatorJobProvider = AggregatorJobProvider()
+    private val realJobProvider: MultiSourceJobProvider = MultiSourceJobProvider()
 ) {
     val allJobs: Flow<List<Job>> = jobDao.getAllJobs()
     val savedJobs: Flow<List<Job>> = jobDao.getSavedJobs()
