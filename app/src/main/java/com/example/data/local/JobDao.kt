@@ -35,4 +35,10 @@ interface JobDao {
 
     @Query("SELECT COUNT(*) FROM jobs")
     suspend fun getCount(): Int
+
+    @Query("SELECT * FROM jobs")
+    suspend fun getAllJobsSnapshot(): List<Job>
+
+    @Query("DELETE FROM jobs WHERE isSaved = 0 AND postedTimestamp < :cutoffTimestamp")
+    suspend fun deleteExpiredUnsavedJobs(cutoffTimestamp: Long): Int
 }
