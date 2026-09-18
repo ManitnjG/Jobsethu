@@ -16,7 +16,7 @@ class AppPreferences(context: Context) {
     private val _isDataSaver = MutableStateFlow(prefs.getBoolean("key_data_saver", false))
     val isDataSaver: StateFlow<Boolean> = _isDataSaver.asStateFlow()
 
-    private val _isDemoMode = MutableStateFlow(prefs.getBoolean("key_demo_mode", true))
+    private val _isDemoMode = MutableStateFlow(prefs.getBoolean("key_demo_mode", false))
     val isDemoMode: StateFlow<Boolean> = _isDemoMode.asStateFlow()
 
     private fun loadLanguage(): AppLanguage {
