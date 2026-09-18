@@ -9,7 +9,6 @@ import com.example.data.provider.CompanyCareerProvider
 import com.example.data.provider.DuplicateJobDetector
 import com.example.data.provider.ScamProtectionEngine
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.firstOrNull
 
 class JobRepository(
     private val jobDao: JobDao,
@@ -30,7 +29,11 @@ class JobRepository(
         // Consolidate duplicates across sources
         val consolidated = DuplicateJobDetector.consolidateDuplicates(combined)
 
-        // Evaluate scam protections and calculate match scores with profile
+        // Preserve cached AI scores for unchanged jobs so a background refresh does
+        // not repeatedly re-process the full database.
+        val existingById = jobDao.getAllJobsSnapshot().associateBy { it.id }
+
+        // Evaluate scam protections and calculate match scores only when needed.
         val enrichedJobs = consolidated.map { job ->
             val scamResult = ScamProtectionEngine.evaluateJob(
                 title = job.title,
@@ -41,18 +44,33 @@ class JobRepository(
                 sourceUrl = job.sourceUrl
             )
 
-            val matchAnalysis = if (candidateProfile != null) {
+            val existing = existingById[job.id]
+            val materiallyChanged = existing == null ||
+                existing.title != job.title ||
+                existing.company != job.company ||
+                existing.description != job.description ||
+                existing.sourceUrl != job.sourceUrl ||
+                existing.postedTimestamp != job.postedTimestamp
+
+            val matchAnalysis = if (candidateProfile != null && materiallyChanged) {
                 aiProvider.matchJob(candidateProfile, job)
             } else null
 
             job.copy(
                 isScamWarning = job.isScamWarning || scamResult.isWarning,
                 scamWarningReason = if (job.scamWarningReason.isNotEmpty()) job.scamWarningReason else scamResult.explanation,
-                matchPercentage = matchAnalysis?.overallMatchPercent ?: 0
+                matchPercentage = matchAnalysis?.overallMatchPercent
+                    ?: existing?.matchPercentage
+                    ?: 0,
+                isSaved = existing?.isSaved ?: job.isSaved
             )
         }
 
-        jobDao.insertJobs(enrichedJobs)
+        if (enrichedJobs.isNotEmpty()) jobDao.insertJobs(enrichedJobs)
+
+        // Keep saved jobs indefinitely; automatically remove stale unsaved listings.
+        val expiryCutoff = System.currentTimeMillis() - 45L * 24 * 60 * 60 * 1000
+        jobDao.deleteExpiredUnsavedJobs(expiryCutoff)
     }
 
     suspend fun getJobById(id: String): Job? {
